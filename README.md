@@ -49,3 +49,4 @@ O projeto utiliza uma filosofia de design baseada em __DDD__ (Domain Driven Desi
 - O design reflete exatamente como o software funciona
 - A estrutura reflete exatamente o design
 
+
