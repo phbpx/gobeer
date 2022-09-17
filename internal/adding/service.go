@@ -1,4 +1,4 @@
-// adding defines the use case for adding a beer.
+// Package adding defines the use case for adding a beer.
 package adding
 
 import (
