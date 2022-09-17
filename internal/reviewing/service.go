@@ -15,6 +15,8 @@ type NewReview struct {
 	Comment string `json:"comment"`
 }
 
+// Repository defines the interface for the reviewing service to interact
+// with the storage.
 type Repository interface {
 	// FindBeer returns the beer with the given ID.
 	FindBeer(ctx context.Context, id string) (*beers.Beer, error)
