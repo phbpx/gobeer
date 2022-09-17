@@ -13,11 +13,13 @@ type mockRepository struct {
 	data []beers.Beer
 }
 
+// CreateBeer creates a new beer.
 func (m *mockRepository) CreateBeer(ctx context.Context, b beers.Beer) error {
 	m.data = append(m.data, b)
 	return nil
 }
 
+// BeerExists returns true if the beer exists.
 func (m *mockRepository) BeerExists(ctx context.Context, name, brewery string) (bool, error) {
 	for _, b := range m.data {
 		if b.Name == name && b.Brewery == brewery {
