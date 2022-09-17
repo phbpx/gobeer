@@ -29,6 +29,8 @@ func (r *mockRepository) CreateReview(ctx context.Context, nr reviewing.NewRevie
 }
 
 func TestCreateReview(t *testing.T) {
+	ctx := context.Background()
+
 	// Create a mock repository.
 	r := &mockRepository{
 		data: []beers.Beer{
@@ -50,7 +52,7 @@ func TestCreateReview(t *testing.T) {
 				Score:   5,
 				Comment: "A very nice beer",
 			}
-			if err := s.CreateReview(context.Background(), nr); err != nil {
+			if err := s.CreateReview(ctx, nr); err != nil {
 				t.Fatalf("\t\t[ERROR] Should be able to create the review. Error: %v", err)
 			}
 			t.Logf("\t\t[OK] Should be able to create the review.")
@@ -64,7 +66,7 @@ func TestCreateReview(t *testing.T) {
 				Score:   5,
 				Comment: "A very nice beer",
 			}
-			if err := s.CreateReview(context.Background(), nr); err != beers.ErrNotFound {
+			if err := s.CreateReview(ctx, nr); err != beers.ErrNotFound {
 				t.Fatalf("\t\t[ERROR] Should not be able to create the review. Error: %v", err)
 			}
 			t.Logf("\t\t[OK] Should not be able to create the review.")

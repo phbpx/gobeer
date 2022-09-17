@@ -2,6 +2,7 @@
 package adding
 
 import (
+	"context"
 	"time"
 
 	"github.com/google/uuid"
@@ -21,9 +22,9 @@ type NewBeer struct {
 // with the storage.
 type Repository interface {
 	// CreateBeer adds a new beer to the storage.
-	CreateBeer(b beers.Beer) error
+	CreateBeer(ctx context.Context, b beers.Beer) error
 	// BeerExists checks if a beer with the given name and brewery already exists.
-	BeerExists(name, brewery string) (bool, error)
+	BeerExists(ctx context.Context, name, brewery string) (bool, error)
 }
 
 // Service provides adding operations.
@@ -37,7 +38,7 @@ func NewService(r Repository) *Service {
 }
 
 // AddBeer adds a new beer to the system.
-func (s *Service) AddBeer(b NewBeer) error {
+func (s *Service) AddBeer(ctx context.Context, b NewBeer) error {
 	beer := beers.Beer{
 		ID:        uuid.NewString(),
 		Name:      b.Name,
@@ -50,7 +51,7 @@ func (s *Service) AddBeer(b NewBeer) error {
 	}
 
 	// Check if the beer already exists.
-	exists, err := s.r.BeerExists(beer.Name, beer.Brewery)
+	exists, err := s.r.BeerExists(ctx, beer.Name, beer.Brewery)
 	if err != nil {
 		return err
 	}
@@ -60,5 +61,5 @@ func (s *Service) AddBeer(b NewBeer) error {
 		return beers.ErrAlreadyExists
 	}
 
-	return s.r.CreateBeer(beer)
+	return s.r.CreateBeer(ctx, beer)
 }
