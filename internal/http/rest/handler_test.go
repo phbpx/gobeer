@@ -60,6 +60,8 @@ func TestHandler(t *testing.T) {
 	testPostBeerReview201(t, h)
 	testPostBeerReview404(t, h)
 	testGetBeerReviews200(t, h)
+	testGetBeerReviews204(t, h)
+	testGetBeerReviews400(t, h)
 }
 
 func testPostBeer201(t *testing.T, h *rest.Handler) {
@@ -248,6 +250,44 @@ func testGetBeerReviews200(t *testing.T, h *rest.Handler) {
 				t.Fatalf("\t\t[ERROR] Should receive a 200 status code. Got %d", w.Code)
 			}
 			t.Log("\t\t[OK] Should receive a 200 status code.")
+		}
+	}
+}
+
+func testGetBeerReviews204(t *testing.T, h *rest.Handler) {
+	beerID := uuid.NewString()
+
+	r := httptest.NewRequest("GET", fmt.Sprintf("/beers/%s/reviews", beerID), nil)
+	w := httptest.NewRecorder()
+
+	h.Router().ServeHTTP(w, r)
+
+	t.Log("Given the neeed to validate a list of beer reviews can't be retrieved with a non existing beer.")
+	{
+		t.Log("\tWhen checking the response code.")
+		{
+			if w.Code != http.StatusNoContent {
+				t.Fatalf("\t\t[ERROR] Should receive a 204 status code. Got %d", w.Code)
+			}
+			t.Log("\t\t[OK] Should receive a 204 status code.")
+		}
+	}
+}
+
+func testGetBeerReviews400(t *testing.T, h *rest.Handler) {
+	r := httptest.NewRequest("GET", "/beers/invalid/reviews", nil)
+	w := httptest.NewRecorder()
+
+	h.Router().ServeHTTP(w, r)
+
+	t.Log("Given the neeed to validate a list of beer reviews can't be retrieved with an invalid beer ID.")
+	{
+		t.Log("\tWhen checking the response code.")
+		{
+			if w.Code != http.StatusBadRequest {
+				t.Fatalf("\t\t[ERROR] Should receive a 400 status code. Got %d", w.Code)
+			}
+			t.Log("\t\t[OK] Should receive a 400 status code.")
 		}
 	}
 }
