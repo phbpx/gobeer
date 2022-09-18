@@ -1,4 +1,6 @@
 # gobeer
+[![Test and coverage](https://github.com/phbpx/gobeer/actions/workflows/go.yml/badge.svg?branch=main)](https://github.com/phbpx/gobeer/actions/workflows/go.yml)
+[![codecov](https://codecov.io/gh/phbpx/gobeer/branch/main/graph/badge.svg?token=KV1V27Z55R)](https://codecov.io/gh/phbpx/gobeer)
 
 Projeto de demonstração utilizado na talk sobre estrutura de projetos Go, onde utilizamos princípios de design baseados no __DDD__ (Domain Driven Design) e __Arquitetura Hexagonal__ para o desenvolvimento de um pequeno backend.
 
