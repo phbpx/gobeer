@@ -9,8 +9,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/phbpx/gobeer/internal/adding"
 	"github.com/phbpx/gobeer/internal/http/rest"
+	"github.com/phbpx/gobeer/internal/listing"
+	"github.com/phbpx/gobeer/internal/reviewing"
 	"github.com/phbpx/gobeer/internal/storage/postgres"
 	"github.com/phbpx/gobeer/internal/storage/postgres/dbtest"
 	"github.com/phbpx/gobeer/kit/docker"
@@ -38,14 +41,20 @@ func TestHandler(t *testing.T) {
 	defer teardown()
 
 	repository := postgres.NewStorage(db)
+	addingSvc := adding.NewService(repository)
+	reviewingSvc := reviewing.NewService(repository)
+	listingSvc := listing.NewService(repository)
 
 	h := rest.NewHandler(rest.Config{
-		Adding: adding.NewService(repository),
+		Adding:    addingSvc,
+		Reviewing: reviewingSvc,
+		Listing:   listingSvc,
 	})
 
 	testPostBeer201(t, h)
 	testPostBeer400(t, h)
 	testPostBeer409(t, h)
+	testPostBeerReview404(t, h)
 }
 
 func testPostBeer201(t *testing.T, h *rest.Handler) {
@@ -124,6 +133,55 @@ func testPostBeer409(t *testing.T, h *rest.Handler) {
 				t.Fatalf("\t\t[ERROR] Should receive a 409 status code. Got %d", w.Code)
 			}
 			t.Log("\t\t[OK] Should receive a 409 status code.")
+		}
+	}
+}
+
+func testGetBeers200(t *testing.T, h *rest.Handler) {
+	r := httptest.NewRequest("GET", "/beers", nil)
+	w := httptest.NewRecorder()
+
+	h.Router().ServeHTTP(w, r)
+
+	t.Log("Given the neeed to validate a list of beers can be retrieved.")
+	{
+		t.Log("\tWhen checking the response code.")
+		{
+			if w.Code != http.StatusOK {
+				t.Fatalf("\t\t[ERROR] Should receive a 200 status code. Got %d", w.Code)
+			}
+			t.Log("\t\t[OK] Should receive a 200 status code.")
+		}
+	}
+}
+
+func testPostBeerReview404(t *testing.T, h *rest.Handler) {
+	nr := reviewing.NewReview{
+		BeerID:  uuid.NewString(),
+		UserID:  uuid.NewString(),
+		Comment: "Test Comment",
+	}
+
+	body, err := json.Marshal(nr)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	beerID := uuid.NewString()
+
+	r := httptest.NewRequest("POST", fmt.Sprintf("/beers/%s/reviews", beerID), bytes.NewReader(body))
+	w := httptest.NewRecorder()
+
+	h.Router().ServeHTTP(w, r)
+
+	t.Log("Given the neeed to validate a new beer review can't be added with a non existing beer.")
+	{
+		t.Log("\tWhen checking the response code.")
+		{
+			if w.Code != http.StatusNotFound {
+				t.Fatalf("\t\t[ERROR] Should receive a 404 status code. Got %d", w.Code)
+			}
+			t.Log("\t\t[OK] Should receive a 404 status code.")
 		}
 	}
 }

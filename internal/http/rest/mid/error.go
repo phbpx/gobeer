@@ -9,8 +9,8 @@ import (
 
 // errorReponse is the JSON response for an error.
 type errorResponse struct {
-	Error  string   `json:"error"`
-	Fields []string `json:"fields,omitempty"`
+	Error  string            `json:"error"`
+	Fields map[string]string `json:"fields,omitempty"`
 }
 
 // ErrorHandler is the middleware for handling errors.
@@ -34,6 +34,8 @@ func errorHandler(c *gin.Context) {
 		c.JSON(http.StatusConflict, errorResponse{Error: err.Error()})
 	case beers.ErrNotFound:
 		c.JSON(http.StatusNotFound, errorResponse{Error: err.Error()})
+	case beers.ErrInvalidID:
+		c.JSON(http.StatusBadRequest, errorResponse{Error: err.Error()})
 	default:
 		c.JSON(http.StatusInternalServerError, errorResponse{Error: err.Error()})
 	}

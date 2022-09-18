@@ -44,11 +44,7 @@ func (s *Storage) CreateBeer(ctx context.Context, b beers.Beer) error {
 		b.ShortDesc,
 		b.CreatedAt)
 
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 // BeerExists checks if a beer exists on the database.
@@ -80,7 +76,10 @@ func (s *Storage) GetBeer(ctx context.Context, id string) (*beers.Beer, error) {
                 beers AS b
         LEFT JOIN 
                 reviews AS r ON r.id = b.id
-        WHERE id = $1`
+        WHERE 
+                b.id = $1
+        GROUP BY
+                b.id`
 
 	var b beers.Beer
 	err := s.db.QueryRowContext(ctx, query, id).Scan(
@@ -119,8 +118,8 @@ func (s *Storage) ListBeers(ctx context.Context) ([]beers.Beer, error) {
                 beers AS b
         LEFT JOIN 
                 reviews AS r ON r.id = b.id
-        ORDER BY 
-                b.created_at DESC`
+        GROUP BY
+                b.id`
 
 	rows, err := s.db.QueryContext(ctx, query)
 	if err != nil {
@@ -150,6 +149,31 @@ func (s *Storage) ListBeers(ctx context.Context) ([]beers.Beer, error) {
 	}
 
 	return list, nil
+}
+
+func (s *Storage) CreateReview(ctx context.Context, r reviews.Review) error {
+	query := `
+        INSERT INTO reviews (
+                id,
+                beer_id,
+                user_id,
+                score,
+                comment,
+                created_at
+        ) VALUES (
+                $1, $2, $3, $4, $5, $6
+        )`
+
+	_, err := s.db.ExecContext(ctx, query,
+		r.ID,
+		r.BeerID,
+		r.UserID,
+		r.Score,
+		r.Comment,
+		r.CreatedAt)
+
+	return err
+
 }
 
 // ListReviews returns a list of reviews from the database.

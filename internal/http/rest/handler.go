@@ -1,32 +1,43 @@
 package rest
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/phbpx/gobeer/internal/adding"
 	"github.com/phbpx/gobeer/internal/http/rest/mid"
+	"github.com/phbpx/gobeer/internal/listing"
+	"github.com/phbpx/gobeer/internal/reviewing"
 )
 
 // Config holds the dependencies for the handler.
 type Config struct {
-	Adding *adding.Service
+	Adding    *adding.Service
+	Reviewing *reviewing.Service
+	Listing   *listing.Service
 }
 
 // Handler is the HTTP handler for the REST API.
 type Handler struct {
-	adding *adding.Service
+	adding    *adding.Service
+	reviewing *reviewing.Service
+	listing   *listing.Service
 }
 
 // NewHandler creates a new Handler.
 func NewHandler(cfg Config) *Handler {
 	return &Handler{
-		adding: cfg.Adding,
+		adding:    cfg.Adding,
+		reviewing: cfg.Reviewing,
+		listing:   cfg.Listing,
 	}
 }
 
 // Router returns the gin router.
 func (h *Handler) Router() *gin.Engine {
+	gin.SetMode(gin.ReleaseMode)
+
 	r := gin.New()
 
 	// Add middlewares.
@@ -35,6 +46,9 @@ func (h *Handler) Router() *gin.Engine {
 
 	// Set routes.
 	r.POST("/beers", h.addBeer)
+	r.GET("/beers", h.listBeers)
+	r.POST("/beers/:id/reviews", h.addReview)
+	r.GET("/beers/:id/reviews", h.listReviews)
 
 	return r
 }
@@ -44,7 +58,7 @@ func (h *Handler) addBeer(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	var nb adding.NewBeer
-	if err := c.BindJSON(&nb); err != nil {
+	if err := c.ShouldBindJSON(&nb); err != nil {
 		c.Error(err)
 		return
 	}
@@ -56,4 +70,52 @@ func (h *Handler) addBeer(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, b)
+}
+
+// listBeers is the HTTP handler for the GET /beers endpoint.
+func (h *Handler) listBeers(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	bs, err := h.listing.ListBeers(ctx)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, bs)
+}
+
+// addReview is the HTTP handler for the POST /beers/:id/reviews endpoint.
+func (h *Handler) addReview(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	var nr reviewing.NewReview
+	if err := c.ShouldBindJSON(&nr); err != nil {
+		c.Error(err)
+		return
+	}
+
+	bs, err := h.reviewing.CreateReview(ctx, nr)
+	if err != nil {
+		fmt.Println(err)
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusCreated, bs)
+}
+
+// listReviews is the HTTP handler for the GET /beers/:id/reviews endpoint.
+func (h *Handler) listReviews(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	beerID := c.Param("id")
+
+	bs, err := h.listing.ListReviews(ctx, beerID)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, bs)
 }

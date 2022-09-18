@@ -4,6 +4,7 @@ package listing
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/phbpx/gobeer/internal/beers"
 	"github.com/phbpx/gobeer/internal/reviews"
 )
@@ -34,5 +35,10 @@ func (s *Service) ListBeers(ctx context.Context) ([]beers.Beer, error) {
 
 // ListReviews lists all the reviews for a given beer.
 func (s *Service) ListReviews(ctx context.Context, id string) ([]reviews.Review, error) {
+	// Validate the beer ID.
+	if _, err := uuid.Parse(id); err != nil {
+		return nil, beers.ErrInvalidID
+	}
+
 	return s.r.ListReviews(ctx, id)
 }

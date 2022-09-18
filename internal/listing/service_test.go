@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/phbpx/gobeer/internal/beers"
 	"github.com/phbpx/gobeer/internal/listing"
 	"github.com/phbpx/gobeer/internal/reviews"
@@ -64,11 +65,21 @@ func TestListing(t *testing.T) {
 		t.Log("\tWhen handling the list reviews request.")
 		{
 			// List the reviews.
-			_, err := service.ListReviews(context.Background(), "1")
+			_, err := service.ListReviews(context.Background(), uuid.NewString())
 			if err != nil {
 				t.Fatalf("\t\t[ERROR] Should be able to list the reviews. Error: %s", err)
 			}
 			t.Log("\t\t[OK] Should be able to list the reviews.")
+		}
+
+		t.Log("\tWhen handling the list reviews request for a invalid id.")
+		{
+			// List the reviews.
+			_, err := service.ListReviews(context.Background(), "invalid")
+			if err != beers.ErrInvalidID {
+				t.Fatalf("\t\t[ERROR] Should not be able to list the reviews. Error: %s", err)
+			}
+			t.Log("\t\t[OK] Should not be able to list the reviews.")
 		}
 	}
 }
