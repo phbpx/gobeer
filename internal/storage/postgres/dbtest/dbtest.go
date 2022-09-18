@@ -27,10 +27,10 @@ func StopDB(c *docker.Container) {
 	docker.StopContainer(c.ID)
 }
 
-// NewUnit creates a test database inside a Docker container. It creates the
+// New creates a test database inside a Docker container. It creates the
 // required table structure but the database is otherwise empty. It returns
 // the database to use as well as a function to call at the end of the test.
-func NewUnit(t *testing.T, c *docker.Container, dbName string) (*sql.DB, func()) {
+func New(t *testing.T, c *docker.Container) (*sql.DB, func()) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -38,7 +38,7 @@ func NewUnit(t *testing.T, c *docker.Container, dbName string) (*sql.DB, func())
 		User:       "postgres",
 		Password:   "postgres",
 		Host:       c.Host,
-		Name:       dbName,
+		Name:       "testdb",
 		DisableTLS: true,
 	})
 	if err != nil {
@@ -52,8 +52,7 @@ func NewUnit(t *testing.T, c *docker.Container, dbName string) (*sql.DB, func())
 	}
 
 	t.Log("Database ready")
-
-	t.Log("Migrate and seed database ...")
+	t.Log("Migrate database ...")
 
 	if err := postgres.RunMigrations(ctx, db); err != nil {
 		docker.DumpContainerLogs(t, c.ID)
@@ -70,24 +69,4 @@ func NewUnit(t *testing.T, c *docker.Container, dbName string) (*sql.DB, func())
 	}
 
 	return db, teardown
-}
-
-// Test owns state for running and shutting down tests.
-type Test struct {
-	DB       *sql.DB
-	Teardown func()
-	t        *testing.T
-}
-
-// NewIntegration creates a database, seeds it, constructs an authenticator.
-func NewIntegration(t *testing.T, c *docker.Container, dbName string) *Test {
-	db, teardown := NewUnit(t, c, dbName)
-
-	test := Test{
-		DB:       db,
-		t:        t,
-		Teardown: teardown,
-	}
-
-	return &test
 }
