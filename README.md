@@ -10,6 +10,7 @@ Projeto de demonstração utilizado na talk sobre estrutura de projetos Go, onde
 - [Projeto](#projeto)
 - [Tecnologias](#tecnologias)
 - [Organização](#organização)
+- [Desenvolvimento](#desenvolvimento)
 
 ## Motivação
 
@@ -51,4 +52,22 @@ O projeto utiliza uma filosofia de design baseada em __DDD__ (Domain Driven Desi
 - O design reflete exatamente como o software funciona
 - A estrutura reflete exatamente o design
 
+## Desenvolvimento
+
+Para desenvolver para este projeto você deve ter o golang instalado ([veja como instalar o go](https://go.dev/doc/install)).
+
+#### Rodando o ambiente local
+
+Se você nunca desenvolveu neste repositório antes:
+
+- Clone o repositório:
+
+Com HTTPS
+```sh
+$ git clone https://github.com/phbpx/gobeer.git
+```
+Com SSH
+```sh
+$ git@github.com:phbpx/gobeer.git
+```
 
