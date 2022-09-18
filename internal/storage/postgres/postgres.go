@@ -14,6 +14,7 @@ import (
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/golang-migrate/migrate/v4/source/httpfs"
 	_ "github.com/lib/pq"
+	"go.uber.org/zap"
 )
 
 //go:embed migrations
@@ -61,7 +62,7 @@ func Open(cfg Config) (*sql.DB, error) {
 
 // StatusCheck returns nil if it can successfully talk to the database. It
 // returns a non-nil error otherwise.
-func StatusCheck(ctx context.Context, db *sql.DB) error {
+func StatusCheck(ctx context.Context, db *sql.DB, log *zap.SugaredLogger) error {
 
 	// First check we can ping the database.
 	var pingError error
@@ -70,6 +71,7 @@ func StatusCheck(ctx context.Context, db *sql.DB) error {
 		if pingError == nil {
 			break
 		}
+		log.Warnf("postgres: ping attempt %d failed: %v", attempts, pingError)
 		time.Sleep(time.Duration(attempts) * 100 * time.Millisecond)
 		if ctx.Err() != nil {
 			return ctx.Err()
@@ -89,9 +91,9 @@ func StatusCheck(ctx context.Context, db *sql.DB) error {
 }
 
 // RunMigration runs the database migrations.
-func RunMigrations(ctx context.Context, db *sql.DB) error {
+func RunMigrations(ctx context.Context, db *sql.DB, log *zap.SugaredLogger) error {
 	// Check if the database is ready.
-	if err := StatusCheck(ctx, db); err != nil {
+	if err := StatusCheck(ctx, db, log); err != nil {
 		return fmt.Errorf("db status check: %w", err)
 	}
 	// Load the migrations from the embedded filesystem.

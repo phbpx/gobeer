@@ -40,7 +40,7 @@ check.docker:
 	@docker version >/dev/null 2>&1 || (echo "ERROR: docker is not installed" && exit 1)
 	@docker-compose version >/dev/null 2>&1 || (echo "ERROR: docker-compose is not installed" && exit 1)
 
-## Install go tools and download container images
+## Install go tools
 setup: check.go check.docker
 	@go install golang.org/x/tools/cmd/goimports@latest
 	@go install honnef.co/go/tools/cmd/staticcheck@latest
@@ -66,7 +66,7 @@ lint:
 
 ## Run local environment
 dev:
-	docker-compose up -d
+	docker-compose up --build -d
 
 ## Stop local environment
 stop:

@@ -1,7 +1,8 @@
 version: '3.7'
 
 services:
-  postgres:
+
+  db:
     image: postgres:14-alpine
     container_name: postgres
     restart: always
@@ -11,17 +12,28 @@ services:
     ports:
       - 5432:5432
     networks:
-      - postgres-network
+      - gobeer-nw
+
   adminer:
     image: adminer
     restart: always
     ports:
       - 8080:8080
     depends_on:
-      - postgres
+      - db
     networks:
-      - postgres-network
+      - gobeer-nw
 
-networks: 
-  postgres-network:
-    driver: bridge
+  gobber-api:
+    build: .
+    environment:
+      GOBEER_DB_HOST: "db:5432"
+    ports:
+      - 3000:3000
+    depends_on:
+      - db
+    networks:
+      - gobeer-nw
+
+networks:
+  gobeer-nw:
