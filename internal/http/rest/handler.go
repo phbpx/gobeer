@@ -86,6 +86,11 @@ func (h *Handler) listBeers(c *gin.Context) {
 		return
 	}
 
+	if len(bs) == 0 {
+		c.Status(http.StatusNoContent)
+		return
+	}
+
 	c.JSON(http.StatusOK, bs)
 }
 

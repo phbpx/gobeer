@@ -12,8 +12,8 @@ import (
 
 // NewReview defines the input parameters for creating a new review.
 type NewReview struct {
-	BeerID  string  `json:"beer_id"`
-	UserID  string  `json:"user_id" binding:"required"`
+	BeerID  string  `json:"-"`
+	UserID  string  `json:"user_id" binding:"required,uuid"`
 	Score   float32 `json:"score" binding:"required"`
 	Comment string  `json:"comment" binding:"required"`
 }

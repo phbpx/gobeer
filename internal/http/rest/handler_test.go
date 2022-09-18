@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/phbpx/gobeer/internal/adding"
+	"github.com/phbpx/gobeer/internal/beers"
 	"github.com/phbpx/gobeer/internal/http/rest"
 	"github.com/phbpx/gobeer/internal/listing"
 	"github.com/phbpx/gobeer/internal/reviewing"
@@ -54,7 +55,10 @@ func TestHandler(t *testing.T) {
 	testPostBeer201(t, h)
 	testPostBeer400(t, h)
 	testPostBeer409(t, h)
+	testGetBeers200(t, h)
+	testPostBeerReview201(t, h)
 	testPostBeerReview404(t, h)
+	testGetBeerReviews200(t, h)
 }
 
 func testPostBeer201(t *testing.T, h *rest.Handler) {
@@ -155,10 +159,46 @@ func testGetBeers200(t *testing.T, h *rest.Handler) {
 	}
 }
 
+func testPostBeerReview201(t *testing.T, h *rest.Handler) {
+	nr := reviewing.NewReview{
+		UserID:  uuid.NewString(),
+		Score:   5,
+		Comment: "Test Comment",
+	}
+
+	body, err := json.Marshal(nr)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	beers := getBeers(t, h)
+	if len(beers) == 0 {
+		t.Fatal("No beers found")
+	}
+
+	beerID := beers[0].ID
+
+	r := httptest.NewRequest("POST", fmt.Sprintf("/beers/%s/reviews", beerID), bytes.NewReader(body))
+	w := httptest.NewRecorder()
+
+	h.Router().ServeHTTP(w, r)
+
+	t.Log("Given the neeed to validate a new beer review can be added.")
+	{
+		t.Log("\tWhen checking the response code.")
+		{
+			if w.Code != http.StatusCreated {
+				t.Fatalf("\t\t[ERROR] Should receive a 201 status code. Got %d", w.Code)
+			}
+			t.Log("\t\t[OK] Should receive a 201 status code.")
+		}
+	}
+}
+
 func testPostBeerReview404(t *testing.T, h *rest.Handler) {
 	nr := reviewing.NewReview{
-		BeerID:  uuid.NewString(),
 		UserID:  uuid.NewString(),
+		Score:   3.0,
 		Comment: "Test Comment",
 	}
 
@@ -184,4 +224,43 @@ func testPostBeerReview404(t *testing.T, h *rest.Handler) {
 			t.Log("\t\t[OK] Should receive a 404 status code.")
 		}
 	}
+}
+
+func testGetBeerReviews200(t *testing.T, h *rest.Handler) {
+	beers := getBeers(t, h)
+	if len(beers) == 0 {
+		t.Fatal("No beers found")
+	}
+
+	beerID := beers[0].ID
+
+	r := httptest.NewRequest("GET", fmt.Sprintf("/beers/%s/reviews", beerID), nil)
+	w := httptest.NewRecorder()
+
+	h.Router().ServeHTTP(w, r)
+
+	t.Log("Given the neeed to validate a list of beer reviews can be retrieved.")
+	{
+		t.Log("\tWhen checking the response code.")
+		{
+			if w.Code != http.StatusOK {
+				t.Fatalf("\t\t[ERROR] Should receive a 200 status code. Got %d", w.Code)
+			}
+			t.Log("\t\t[OK] Should receive a 200 status code.")
+		}
+	}
+}
+
+func getBeers(t *testing.T, h *rest.Handler) []beers.Beer {
+	r := httptest.NewRequest("GET", "/beers", nil)
+	w := httptest.NewRecorder()
+
+	h.Router().ServeHTTP(w, r)
+
+	var beers []beers.Beer
+	if err := json.NewDecoder(w.Body).Decode(&beers); err != nil {
+		t.Fatal(err)
+	}
+
+	return beers
 }

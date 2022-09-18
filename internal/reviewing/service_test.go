@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/phbpx/gobeer/internal/beers"
 	"github.com/phbpx/gobeer/internal/reviewing"
 	"github.com/phbpx/gobeer/internal/reviews"
@@ -32,11 +33,13 @@ func (r *mockRepository) CreateReview(ctx context.Context, nr reviews.Review) er
 func TestCreateReview(t *testing.T) {
 	ctx := context.Background()
 
+	beerID := uuid.NewString()
+
 	// Create a mock repository.
 	r := &mockRepository{
 		data: []beers.Beer{
-			{ID: "1", Name: "Beer 1"},
-			{ID: "2", Name: "Beer 2"},
+			{ID: beerID, Name: "Beer 1"},
+			{ID: uuid.NewString(), Name: "Beer 2"},
 		},
 	}
 
@@ -48,8 +51,8 @@ func TestCreateReview(t *testing.T) {
 		t.Logf("\tWhen creating a new review for a beer that exists.")
 		{
 			nr := reviewing.NewReview{
-				BeerID:  "1",
-				UserID:  "1",
+				BeerID:  beerID,
+				UserID:  uuid.NewString(),
 				Score:   5,
 				Comment: "A very nice beer",
 			}
@@ -62,8 +65,8 @@ func TestCreateReview(t *testing.T) {
 		t.Logf("\tWhen creating a new review for a beer that does not exist.")
 		{
 			nr := reviewing.NewReview{
-				BeerID:  "3",
-				UserID:  "1",
+				BeerID:  uuid.NewString(),
+				UserID:  uuid.NewString(),
 				Score:   5,
 				Comment: "A very nice beer",
 			}

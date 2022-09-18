@@ -1,9 +1,11 @@
 package mid
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"github.com/phbpx/gobeer/internal/beers"
 )
 
@@ -29,14 +31,29 @@ func errorHandler(c *gin.Context) {
 	// Get the last error.
 	err := c.Errors.Last().Err
 
-	switch err {
-	case beers.ErrAlreadyExists:
+	switch {
+	case isFieldError(err):
+		c.JSON(http.StatusBadRequest, fieldErrorResponse(err))
+	case errors.Is(err, beers.ErrAlreadyExists):
 		c.JSON(http.StatusConflict, errorResponse{Error: err.Error()})
-	case beers.ErrNotFound:
+	case errors.Is(err, beers.ErrNotFound):
 		c.JSON(http.StatusNotFound, errorResponse{Error: err.Error()})
-	case beers.ErrInvalidID:
+	case errors.Is(err, beers.ErrInvalidID):
 		c.JSON(http.StatusBadRequest, errorResponse{Error: err.Error()})
 	default:
 		c.JSON(http.StatusInternalServerError, errorResponse{Error: err.Error()})
 	}
+}
+
+func isFieldError(err error) bool {
+	var fe validator.ValidationErrors
+	return errors.As(err, &fe)
+}
+
+func fieldErrorResponse(err error) errorResponse {
+	mFieldErrors := map[string]string{}
+	for _, e := range err.(validator.ValidationErrors) {
+		mFieldErrors[e.Field()] = e.Tag()
+	}
+	return errorResponse{Error: "invalid request", Fields: mFieldErrors}
 }
