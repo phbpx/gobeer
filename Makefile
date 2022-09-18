@@ -36,10 +36,15 @@ GOBIN := $(shell go version)
 check.go:
 	@go version >/dev/null 2>&1 || (echo "ERROR: go is not installed" && exit 1)
 
-## Install go tools
-setup.dev: check.go
-	go install golang.org/x/tools/cmd/goimports@latest
-	go install honnef.co/go/tools/cmd/staticcheck@latest
+check.docker:
+	@docker version >/dev/null 2>&1 || (echo "ERROR: docker is not installed" && exit 1)
+	@docker-compose version >/dev/null 2>&1 || (echo "ERROR: docker-compose is not installed" && exit 1)
+
+## Install go tools and download container images
+setup: check.go check.docker
+	@go install golang.org/x/tools/cmd/goimports@latest
+	@go install honnef.co/go/tools/cmd/staticcheck@latest
+	@docker pull postgres:14-alpine
 
 # ==============================================================================
 # Test
@@ -60,5 +65,9 @@ lint:
 # Dev
 
 ## Run local environment
-run.db:
+dev:
 	docker-compose up -d
+
+## Stop local environment
+stop:
+	docker-compose stop

@@ -44,11 +44,16 @@ func (h *Handler) Router() *gin.Engine {
 	r.Use(gin.Recovery())
 	r.Use(mid.ErrorHandler())
 
-	// Set routes.
+	// app routes.
 	r.POST("/beers", h.addBeer)
 	r.GET("/beers", h.listBeers)
 	r.POST("/beers/:id/reviews", h.addReview)
 	r.GET("/beers/:id/reviews", h.listReviews)
+
+	// debug routes.
+	r.GET("/debug/health", func(c *gin.Context) {
+		c.String(http.StatusOK, "OK")
+	})
 
 	return r
 }
