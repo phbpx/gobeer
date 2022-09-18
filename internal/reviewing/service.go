@@ -18,8 +18,8 @@ type NewReview struct {
 // Repository defines the interface for the reviewing service to interact
 // with the storage.
 type Repository interface {
-	// FindBeer returns the beer with the given ID.
-	FindBeer(ctx context.Context, id string) (*beers.Beer, error)
+	// GetBeer returns the beer with the given ID.
+	GetBeer(ctx context.Context, id string) (*beers.Beer, error)
 	// CreateReview creates a new review.
 	CreateReview(ctx context.Context, review NewReview) error
 }
@@ -37,7 +37,7 @@ func NewService(r Repository) *Service {
 // CreateReview creates a new review.
 func (s *Service) CreateReview(ctx context.Context, review NewReview) error {
 	// Find the beer.
-	if _, err := s.r.FindBeer(ctx, review.BeerID); err != nil {
+	if _, err := s.r.GetBeer(ctx, review.BeerID); err != nil {
 		return err
 	}
 

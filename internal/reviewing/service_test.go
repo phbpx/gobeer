@@ -13,8 +13,8 @@ type mockRepository struct {
 	data []beers.Beer
 }
 
-// FindBeer returns the beer with the given ID.
-func (r *mockRepository) FindBeer(ctx context.Context, id string) (*beers.Beer, error) {
+// GetBeer returns the beer with the given ID.
+func (r *mockRepository) GetBeer(ctx context.Context, id string) (*beers.Beer, error) {
 	for _, b := range r.data {
 		if b.ID == id {
 			return &b, nil
