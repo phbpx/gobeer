@@ -59,6 +59,6 @@ lint:
 # ==============================================================================
 # Dev
 
-## Run local database
+## Run local environment
 run.db:
 	docker-compose up -d

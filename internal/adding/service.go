@@ -11,11 +11,11 @@ import (
 
 // NewBeer represents a new beer to be added to the system.
 type NewBeer struct {
-	Name      string  `json:"name"`
-	Brewery   string  `json:"brewery"`
-	Style     string  `json:"style"`
-	ABV       float32 `json:"abv"`
-	ShortDesc string  `json:"short_desc"`
+	Name      string  `json:"name" binding:"required"`
+	Brewery   string  `json:"brewery" binding:"required"`
+	Style     string  `json:"style" binding:"required"`
+	ABV       float32 `json:"abv" binding:"required"`
+	ShortDesc string  `json:"short_desc" binding:"required"`
 }
 
 // Repository defines the interface for the adding service to interact
@@ -38,7 +38,7 @@ func NewService(r Repository) *Service {
 }
 
 // AddBeer adds a new beer to the system.
-func (s *Service) AddBeer(ctx context.Context, b NewBeer) error {
+func (s *Service) AddBeer(ctx context.Context, b NewBeer) (*beers.Beer, error) {
 	beer := beers.Beer{
 		ID:        uuid.NewString(),
 		Name:      b.Name,
@@ -53,13 +53,13 @@ func (s *Service) AddBeer(ctx context.Context, b NewBeer) error {
 	// Check if the beer already exists.
 	exists, err := s.r.BeerExists(ctx, beer.Name, beer.Brewery)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// If the beer already exists, return an error.
 	if exists {
-		return beers.ErrAlreadyExists
+		return nil, beers.ErrAlreadyExists
 	}
 
-	return s.r.CreateBeer(ctx, beer)
+	return &beer, s.r.CreateBeer(ctx, beer)
 }

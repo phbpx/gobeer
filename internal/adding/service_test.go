@@ -51,7 +51,7 @@ func TestAddingBeer(t *testing.T) {
 	{
 		t.Log("\tWhen adding a new beer")
 		{
-			err := s.AddBeer(ctx, b)
+			_, err := s.AddBeer(ctx, b)
 			if err != nil {
 				t.Fatalf("\t\t[ERROR] Should be able to add the beer without error: %v", err)
 			}
@@ -60,7 +60,7 @@ func TestAddingBeer(t *testing.T) {
 
 		t.Log("\tWhen adding a beer that already exists")
 		{
-			err := s.AddBeer(ctx, b)
+			_, err := s.AddBeer(ctx, b)
 			if err != beers.ErrAlreadyExists {
 				t.Fatalf("\t\t[ERROR] Should not be able to add the beer: %v", err)
 			}
