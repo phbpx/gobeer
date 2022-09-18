@@ -1,0 +1,108 @@
+{
+	"info": {
+		"_postman_id": "cbfd95b5-9f9d-4fde-ab3b-446756c7358b",
+		"name": "gobeer-api",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "10905207"
+	},
+	"item": [
+		{
+			"name": "Adding beer",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"Test 2\",\n    \"brewery\": \"Test 2\",\n    \"style\": \"IPA\",\n    \"ABV\": 5.0,\n    \"short_desc\": \"Test\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/beers",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"beers"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Listing beers",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/beers",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"beers"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Listing beer reviews",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/beers/76060dd3-4773-488c-b854-e0b47122bf4b/reviews",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"beers",
+						"76060dd3-4773-488c-b854-e0b47122bf4b",
+						"reviews"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Adding beer review",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"user_id\": \"76060dd3-4773-488c-b854-e0b47122bf4b\",\n    \"score\": 4,\n    \"comment\": \"Good beer\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/beers/76060dd3-4773-488c-b854-e0b47122bf4b/reviews",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"beers",
+						"76060dd3-4773-488c-b854-e0b47122bf4b",
+						"reviews"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
