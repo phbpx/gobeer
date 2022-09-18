@@ -1,13 +1,18 @@
 package dbtest
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"database/sql"
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/phbpx/gobeer/internal/storage/postgres"
 	"github.com/phbpx/gobeer/kit/docker"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 // StartDB starts a database instance.
@@ -30,7 +35,7 @@ func StopDB(c *docker.Container) {
 // New creates a test database inside a Docker container. It creates the
 // required table structure but the database is otherwise empty. It returns
 // the database to use as well as a function to call at the end of the test.
-func New(t *testing.T, c *docker.Container) (*sql.DB, func()) {
+func New(t *testing.T, c *docker.Container) (*sql.DB, *zap.SugaredLogger, func()) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -61,12 +66,26 @@ func New(t *testing.T, c *docker.Container) (*sql.DB, func()) {
 
 	t.Log("Ready for testing ...")
 
+	var buf bytes.Buffer
+	encoder := zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig())
+	writer := bufio.NewWriter(&buf)
+	log := zap.New(
+		zapcore.NewCore(encoder, zapcore.AddSync(writer), zapcore.DebugLevel)).
+		Sugar()
+
 	// teardown is the function that should be invoked when the caller is done
 	// with the database.
 	teardown := func() {
 		t.Helper()
 		db.Close()
+
+		log.Sync()
+
+		writer.Flush()
+		fmt.Println("******************** LOGS ********************")
+		fmt.Print(buf.String())
+		fmt.Println("******************** LOGS ********************")
 	}
 
-	return db, teardown
+	return db, log, teardown
 }

@@ -116,6 +116,7 @@ func run(log *zap.SugaredLogger) error {
 
 	// Create handler.
 	h := rest.NewHandler(rest.Config{
+		Log:       log,
 		Adding:    addingSvc,
 		Reviewing: reviewingSvc,
 		Listing:   listingSvc,

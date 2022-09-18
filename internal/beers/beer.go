@@ -8,10 +8,10 @@ import (
 
 var (
 	// ErrInvalidID is returned when an invalid ID is provided.
-	ErrInvalidID = errors.New("invalid ID")
+	ErrInvalidID = errors.New("invalid beer ID")
 
 	// ErrNotFound is used when a beer is not found.
-	ErrNotFound = errors.New("not found")
+	ErrNotFound = errors.New("beer not found")
 
 	// ErrAlreadyExists is used when a beer already exists.
 	ErrAlreadyExists = errors.New("beer already exists")

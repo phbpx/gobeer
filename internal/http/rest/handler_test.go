@@ -38,7 +38,7 @@ func TestMain(m *testing.M) {
 func TestHandler(t *testing.T) {
 	t.Parallel()
 
-	db, teardown := dbtest.New(t, c)
+	db, log, teardown := dbtest.New(t, c)
 	defer teardown()
 
 	repository := postgres.NewStorage(db)
@@ -47,6 +47,7 @@ func TestHandler(t *testing.T) {
 	listingSvc := listing.NewService(repository)
 
 	h := rest.NewHandler(rest.Config{
+		Log:       log,
 		Adding:    addingSvc,
 		Reviewing: reviewingSvc,
 		Listing:   listingSvc,

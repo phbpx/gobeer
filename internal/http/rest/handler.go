@@ -8,10 +8,12 @@ import (
 	"github.com/phbpx/gobeer/internal/http/rest/mid"
 	"github.com/phbpx/gobeer/internal/listing"
 	"github.com/phbpx/gobeer/internal/reviewing"
+	"go.uber.org/zap"
 )
 
 // Config holds the dependencies for the handler.
 type Config struct {
+	Log       *zap.SugaredLogger
 	Adding    *adding.Service
 	Reviewing *reviewing.Service
 	Listing   *listing.Service
@@ -19,6 +21,7 @@ type Config struct {
 
 // Handler is the HTTP handler for the REST API.
 type Handler struct {
+	log       *zap.SugaredLogger
 	adding    *adding.Service
 	reviewing *reviewing.Service
 	listing   *listing.Service
@@ -27,6 +30,7 @@ type Handler struct {
 // NewHandler creates a new Handler.
 func NewHandler(cfg Config) *Handler {
 	return &Handler{
+		log:       cfg.Log,
 		adding:    cfg.Adding,
 		reviewing: cfg.Reviewing,
 		listing:   cfg.Listing,
@@ -41,6 +45,7 @@ func (h *Handler) Router() *gin.Engine {
 
 	// Add middlewares.
 	r.Use(gin.Recovery())
+	r.Use(mid.Logger(h.log))
 	r.Use(mid.ErrorHandler())
 
 	// app routes.
