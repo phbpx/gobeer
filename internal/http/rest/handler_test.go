@@ -58,6 +58,7 @@ func TestHandler(t *testing.T) {
 	testPostBeer409(t, h)
 	testGetBeers200(t, h)
 	testPostBeerReview201(t, h)
+	testPostBeerReview400(t, h)
 	testPostBeerReview404(t, h)
 	testGetBeerReviews200(t, h)
 	testGetBeerReviews204(t, h)
@@ -194,6 +195,24 @@ func testPostBeerReview201(t *testing.T, h *rest.Handler) {
 				t.Fatalf("\t\t[ERROR] Should receive a 201 status code. Got %d", w.Code)
 			}
 			t.Log("\t\t[OK] Should receive a 201 status code.")
+		}
+	}
+}
+
+func testPostBeerReview400(t *testing.T, h *rest.Handler) {
+	r := httptest.NewRequest("POST", "/beers/123/reviews", strings.NewReader("{}"))
+	w := httptest.NewRecorder()
+
+	h.Router().ServeHTTP(w, r)
+
+	t.Log("Given the neeed to validate a new beer review can't be added with invalid payload.")
+	{
+		t.Log("\tWhen checking the response code.")
+		{
+			if w.Code != http.StatusBadRequest {
+				t.Fatalf("\t\t[ERROR] Should receive a 400 status code. Got %d", w.Code)
+			}
+			t.Log("\t\t[OK] Should receive a 400 status code.")
 		}
 	}
 }
