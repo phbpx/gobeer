@@ -12,10 +12,10 @@ import (
 
 // NewReview defines the input parameters for creating a new review.
 type NewReview struct {
-	BeerID  string `json:"beer_id" binding:"required"`
-	UserID  string `json:"user_id" binding:"required"`
-	Score   int    `json:"score" binding:"required"`
-	Comment string `json:"comment" binding:"required"`
+	BeerID  string  `json:"beer_id"`
+	UserID  string  `json:"user_id" binding:"required"`
+	Score   float32 `json:"score" binding:"required"`
+	Comment string  `json:"comment" binding:"required"`
 }
 
 // Repository defines the interface for the reviewing service to interact
@@ -39,6 +39,12 @@ func NewService(r Repository) *Service {
 
 // CreateReview creates a new review.
 func (s *Service) CreateReview(ctx context.Context, nr NewReview) (*reviews.Review, error) {
+
+	// Validate the beer ID.
+	if _, err := uuid.Parse(nr.BeerID); err != nil {
+		return nil, beers.ErrInvalidID
+	}
+
 	// Find the beer.
 	if _, err := s.r.GetBeer(ctx, nr.BeerID); err != nil {
 		return nil, err

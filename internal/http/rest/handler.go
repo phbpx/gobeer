@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -100,9 +99,11 @@ func (h *Handler) addReview(c *gin.Context) {
 		return
 	}
 
+	beerID := c.Param("id")
+	nr.BeerID = beerID
+
 	bs, err := h.reviewing.CreateReview(ctx, nr)
 	if err != nil {
-		fmt.Println(err)
 		c.Error(err)
 		return
 	}
@@ -116,11 +117,16 @@ func (h *Handler) listReviews(c *gin.Context) {
 
 	beerID := c.Param("id")
 
-	bs, err := h.listing.ListReviews(ctx, beerID)
+	r, err := h.listing.ListReviews(ctx, beerID)
 	if err != nil {
 		c.Error(err)
 		return
 	}
 
-	c.JSON(http.StatusOK, bs)
+	if len(r) == 0 {
+		c.Status(http.StatusNoContent)
+		return
+	}
+
+	c.JSON(http.StatusOK, r)
 }

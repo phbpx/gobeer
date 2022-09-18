@@ -75,7 +75,7 @@ func (s *Storage) GetBeer(ctx context.Context, id string) (*beers.Beer, error) {
         FROM 
                 beers AS b
         LEFT JOIN 
-                reviews AS r ON r.id = b.id
+                reviews AS r ON r.beer_id = b.id
         WHERE 
                 b.id = $1
         GROUP BY
@@ -117,7 +117,7 @@ func (s *Storage) ListBeers(ctx context.Context) ([]beers.Beer, error) {
         FROM 
                 beers AS b
         LEFT JOIN 
-                reviews AS r ON r.id = b.id
+                reviews AS r ON r.beer_id = b.id
         GROUP BY
                 b.id`
 
@@ -184,11 +184,12 @@ func (s *Storage) ListReviews(ctx context.Context, id string) ([]reviews.Review,
                 r.beer_id,
                 r.user_id,
                 r.score,
-                r.comment
+                r.comment,
+                r.created_at
         FROM 
                 reviews AS r
         WHERE 
-                r.id = $1
+                r.beer_id = $1
         ORDER BY 
                 r.created_at DESC`
 

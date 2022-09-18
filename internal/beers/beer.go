@@ -25,6 +25,6 @@ type Beer struct {
 	Style     string    `json:"style"`
 	ABV       float32   `json:"abv"`
 	ShortDesc string    `json:"short_desc"`
-	Score     int       `json:"score"`
+	Score     float32   `json:"score"`
 	CreatedAt time.Time `json:"created_at"`
 }

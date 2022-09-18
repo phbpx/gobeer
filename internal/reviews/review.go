@@ -8,7 +8,7 @@ type Review struct {
 	ID        string    `json:"id"`
 	BeerID    string    `json:"beer_id"`
 	UserID    string    `json:"user_id"`
-	Score     int       `json:"score"`
+	Score     float32   `json:"score"`
 	Comment   string    `json:"comment"`
 	CreatedAt time.Time `json:"created_at"`
 }

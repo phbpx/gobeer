@@ -14,5 +14,5 @@ CREATE TABLE IF NOT EXISTS "reviews" (
     "beer_id" UUID NOT NULL REFERENCES "beers" ("id") ON DELETE CASCADE,
     "user_id" UUID NOT NULL,
     "comment" TEXT NOT NULL,
-    "score" INTEGER NOT NULL
+    "score" FLOAT NOT NULL
 );
