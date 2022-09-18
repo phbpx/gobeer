@@ -4,7 +4,6 @@ go 1.19
 
 require (
 	github.com/ardanlabs/conf/v3 v3.1.2
-	github.com/gin-contrib/pprof v1.4.0
 	github.com/gin-gonic/gin v1.8.1
 	github.com/golang-migrate/migrate/v4 v4.15.2
 	github.com/google/uuid v1.3.0
