@@ -39,6 +39,14 @@ func New(t *testing.T, c *docker.Container) (*sql.DB, *zap.SugaredLogger, func()
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	var buf bytes.Buffer
+
+	encoder := zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig())
+	writer := bufio.NewWriter(&buf)
+	log := zap.New(
+		zapcore.NewCore(encoder, zapcore.AddSync(writer), zapcore.DebugLevel)).
+		Sugar()
+
 	db, err := postgres.Open(postgres.Config{
 		User:       "postgres",
 		Password:   "postgres",
@@ -52,26 +60,22 @@ func New(t *testing.T, c *docker.Container) (*sql.DB, *zap.SugaredLogger, func()
 
 	t.Log("Waiting for database to be ready ...")
 
-	if err := postgres.StatusCheck(ctx, db); err != nil {
+	if err := postgres.StatusCheck(ctx, db, log); err != nil {
 		t.Fatalf("status check database: %v", err)
 	}
 
 	t.Log("Database ready")
-	t.Log("Migrate database ...")
 
-	if err := postgres.RunMigrations(ctx, db); err != nil {
+	t.Log("Update database schema ...")
+
+	if err := postgres.RunMigrations(ctx, db, log); err != nil {
 		docker.DumpContainerLogs(t, c.ID)
 		t.Fatalf("Migrating error: %s", err)
 	}
 
-	t.Log("Ready for testing ...")
+	t.Log("Database schema updated")
 
-	var buf bytes.Buffer
-	encoder := zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig())
-	writer := bufio.NewWriter(&buf)
-	log := zap.New(
-		zapcore.NewCore(encoder, zapcore.AddSync(writer), zapcore.DebugLevel)).
-		Sugar()
+	t.Log("Ready for testing ...")
 
 	// teardown is the function that should be invoked when the caller is done
 	// with the database.

@@ -98,7 +98,7 @@ func run(log *zap.SugaredLogger) error {
 
 	log.Infow("startup", "status", "updating database schema", "database", cfg.DB.Name, "host", cfg.DB.Host)
 
-	if err := postgres.RunMigrations(context.Background(), db); err != nil {
+	if err := postgres.RunMigrations(context.Background(), db, log); err != nil {
 		log.Infow("shutdown", "status", "stopping database support", "host", cfg.DB.Host)
 		return fmt.Errorf("migrating db: %w", err)
 	}
