@@ -78,7 +78,7 @@ $ git clone https://github.com/phbpx/gobeer.git
 ```
 `Com SSH`
 ```sh
-$ git@github.com:phbpx/gobeer.git
+$ git clone git@github.com:phbpx/gobeer.git
 ```
 
 #### Comandos makefile
