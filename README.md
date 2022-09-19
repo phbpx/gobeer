@@ -109,7 +109,7 @@ Targets:
 Alguns comandos make utilizam ferramentas de linha de comando do Go, e para instalar é necessário rodar o comando:
 
 ```sh
-make setup
+$ make setup
 ```
 
 #### Executando testes
@@ -123,7 +123,7 @@ $ make test
 Para executar os testes e vizualisar o relatório de cobertura de código, rode o comando:
 
 ```sh
-make cover
+$ make cover
 ```
 
 #### Executando o ambiente local
@@ -137,7 +137,7 @@ $ make dev
 E para desligar o ambiente:
 
 ```sh
-make stop
+$ make stop
 ```
 
 Endereços:
