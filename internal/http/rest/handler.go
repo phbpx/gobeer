@@ -64,15 +64,13 @@ func (h *Handler) Router() *gin.Engine {
 
 // addBeer is the HTTP handler for the POST /beers endpoint.
 func (h *Handler) addBeer(c *gin.Context) {
-	ctx := c.Request.Context()
-
 	var nb adding.NewBeer
 	if err := c.ShouldBindJSON(&nb); err != nil {
 		c.Error(err)
 		return
 	}
 
-	b, err := h.adding.AddBeer(ctx, nb)
+	b, err := h.adding.AddBeer(c, nb)
 	if err != nil {
 		c.Error(err)
 		return
@@ -83,9 +81,7 @@ func (h *Handler) addBeer(c *gin.Context) {
 
 // listBeers is the HTTP handler for the GET /beers endpoint.
 func (h *Handler) listBeers(c *gin.Context) {
-	ctx := c.Request.Context()
-
-	bs, err := h.listing.ListBeers(ctx)
+	bs, err := h.listing.ListBeers(c)
 	if err != nil {
 		c.Error(err)
 		return
@@ -101,8 +97,6 @@ func (h *Handler) listBeers(c *gin.Context) {
 
 // addReview is the HTTP handler for the POST /beers/:id/reviews endpoint.
 func (h *Handler) addReview(c *gin.Context) {
-	ctx := c.Request.Context()
-
 	var nr reviewing.NewReview
 	if err := c.ShouldBindJSON(&nr); err != nil {
 		c.Error(err)
@@ -112,7 +106,7 @@ func (h *Handler) addReview(c *gin.Context) {
 	beerID := c.Param("id")
 	nr.BeerID = beerID
 
-	bs, err := h.reviewing.CreateReview(ctx, nr)
+	bs, err := h.reviewing.CreateReview(c, nr)
 	if err != nil {
 		c.Error(err)
 		return
@@ -123,11 +117,9 @@ func (h *Handler) addReview(c *gin.Context) {
 
 // listReviews is the HTTP handler for the GET /beers/:id/reviews endpoint.
 func (h *Handler) listReviews(c *gin.Context) {
-	ctx := c.Request.Context()
-
 	beerID := c.Param("id")
 
-	r, err := h.listing.ListReviews(ctx, beerID)
+	r, err := h.listing.ListReviews(c, beerID)
 	if err != nil {
 		c.Error(err)
 		return
