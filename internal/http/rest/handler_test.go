@@ -13,11 +13,10 @@ import (
 	"github.com/phbpx/gobeer/internal/adding"
 	"github.com/phbpx/gobeer/internal/beers"
 	"github.com/phbpx/gobeer/internal/http/rest"
-	"github.com/phbpx/gobeer/internal/listing"
 	"github.com/phbpx/gobeer/internal/reviewing"
-	"github.com/phbpx/gobeer/internal/storage/postgres"
 	"github.com/phbpx/gobeer/internal/storage/postgres/dbtest"
-	"github.com/phbpx/gobeer/kit/docker"
+	"github.com/phbpx/gobeer/pkg/docker"
+	"go.opentelemetry.io/otel"
 )
 
 var c *docker.Container
@@ -38,19 +37,13 @@ func TestMain(m *testing.M) {
 func TestHandler(t *testing.T) {
 	t.Parallel()
 
-	db, log, teardown := dbtest.New(t, c)
-	defer teardown()
-
-	repository := postgres.NewStorage(db)
-	addingSvc := adding.NewService(repository)
-	reviewingSvc := reviewing.NewService(repository)
-	listingSvc := listing.NewService(repository)
+	test := dbtest.NewTest(t, c)
+	defer test.Teardown()
 
 	h := rest.NewHandler(rest.Config{
-		Log:       log,
-		Adding:    addingSvc,
-		Reviewing: reviewingSvc,
-		Listing:   listingSvc,
+		Log:    test.Log,
+		Tracer: otel.Tracer(""),
+		DB:     test.DB,
 	})
 
 	testPostBeer201(t, h)

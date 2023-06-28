@@ -11,33 +11,31 @@ import (
 	"time"
 
 	"github.com/ardanlabs/conf/v3"
-	"github.com/phbpx/gobeer/internal/adding"
 	"github.com/phbpx/gobeer/internal/http/rest"
-	"github.com/phbpx/gobeer/internal/listing"
-	"github.com/phbpx/gobeer/internal/reviewing"
 	"github.com/phbpx/gobeer/internal/storage/postgres"
-	"github.com/phbpx/gobeer/kit/logger"
-	"go.uber.org/zap"
+	"github.com/phbpx/gobeer/pkg/logger"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/exporters/jaeger"
+	"go.opentelemetry.io/otel/sdk/resource"
+	tracesdk "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 )
 
-func main() {
-	// Construct the application logger.
-	log, err := logger.New("gobeer-api")
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	defer log.Sync()
+const service = "gobeer-api"
 
-	if err := run(log); err != nil {
-		log.Errorw("startup", "ERROR", err)
-		log.Sync()
+func main() {
+	ctx := context.Background()
+	log := logger.New(os.Stdout, logger.LevelInfo, service)
+
+	if err := run(ctx, log); err != nil {
+		log.Error(ctx, "startup", "ERROR", err)
 		os.Exit(1)
 	}
 }
 
-func run(log *zap.SugaredLogger) error {
-	// =========================================================================
+func run(ctx context.Context, log *logger.Logger) error {
+	// -------------------------------------------------------------------------
 	// Configuration
 
 	cfg := struct {
@@ -58,6 +56,10 @@ func run(log *zap.SugaredLogger) error {
 			MaxOpenConns int    `conf:"default:0"`
 			DisableTLS   bool   `conf:"default:true"`
 		}
+		Tracing struct {
+			ReporterURI string  `conf:"default:http://localhost:14268/api/traces"`
+			Probability float64 `conf:"default:0.5"`
+		}
 	}{}
 
 	const prefix = "GOBEER"
@@ -71,11 +73,11 @@ func run(log *zap.SugaredLogger) error {
 
 	}
 
-	// =========================================================================
+	// -------------------------------------------------------------------------
 	// Database Support
 
 	// Create connectivity to the database.
-	log.Infow("startup", "status", "initializing database support", "host", cfg.DB.Host)
+	log.Info(ctx, "startup", "status", "initializing database support", "host", cfg.DB.Host)
 
 	db, err := postgres.Open(postgres.Config{
 		User:         cfg.DB.User,
@@ -93,33 +95,39 @@ func run(log *zap.SugaredLogger) error {
 		db.Close()
 	}()
 
-	// =========================================================================
+	// -------------------------------------------------------------------------
 	// Update the schema, if needed.
 
-	log.Infow("startup", "status", "updating database schema", "database", cfg.DB.Name, "host", cfg.DB.Host)
+	log.Info(ctx, "startup", "status", "updating database schema", "database", cfg.DB.Name, "host", cfg.DB.Host)
 
 	if err := postgres.RunMigrations(context.Background(), db, log); err != nil {
-		log.Infow("shutdown", "status", "stopping database support", "host", cfg.DB.Host)
+		log.Info(ctx, "shutdown", "status", "stopping database support", "host", cfg.DB.Host)
 		return fmt.Errorf("migrating db: %w", err)
 	}
 
-	// =========================================================================
+	// -------------------------------------------------------------------------
+	// Start Tracing Support
+
+	log.Info(ctx, "startup", "status", "initializing OT/Jaeger tracing support")
+
+	traceProvider, err := startTracing(service, cfg.Tracing.ReporterURI, cfg.Tracing.Probability)
+	if err != nil {
+		return fmt.Errorf("starting tracing: %w", err)
+	}
+	defer traceProvider.Shutdown(context.Background())
+
+	tracer := otel.Tracer("gobeer-api")
+
+	// -------------------------------------------------------------------------
 	// Start API Service
 
-	log.Infow("startup", "status", "initializing http server")
-
-	// Create dependencies for the API.
-	repository := postgres.NewStorage(db)
-	addingSvc := adding.NewService(repository)
-	reviewingSvc := reviewing.NewService(repository)
-	listingSvc := listing.NewService(repository)
+	log.Info(ctx, "startup", "status", "initializing http server")
 
 	// Create handler.
 	h := rest.NewHandler(rest.Config{
-		Log:       log,
-		Adding:    addingSvc,
-		Reviewing: reviewingSvc,
-		Listing:   listingSvc,
+		Log:    log,
+		Tracer: tracer,
+		DB:     db,
 	})
 
 	// Create a new HTTP server.
@@ -137,7 +145,7 @@ func run(log *zap.SugaredLogger) error {
 
 	// Start the service listening for api requests.
 	go func() {
-		log.Infow("startup", "status", "http router started", "host", srv.Addr)
+		log.Info(ctx, "startup", "status", "http router started", "host", srv.Addr)
 		serverErrors <- srv.ListenAndServe()
 	}()
 
@@ -152,8 +160,8 @@ func run(log *zap.SugaredLogger) error {
 		return fmt.Errorf("server error: %w", err)
 
 	case sig := <-shutdown:
-		log.Infow("shutdown", "status", "shutdown started", "signal", sig)
-		defer log.Infow("shutdown", "status", "shutdown complete", "signal", sig)
+		log.Info(ctx, "shutdown", "status", "shutdown started", "signal", sig)
+		defer log.Info(ctx, "shutdown", "status", "shutdown complete", "signal", sig)
 
 		// Give outstanding requests a deadline for completion.
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -167,4 +175,32 @@ func run(log *zap.SugaredLogger) error {
 	}
 
 	return nil
+}
+
+// ============================================================================
+
+func startTracing(service, reporterURL string, probability float64) (*tracesdk.TracerProvider, error) {
+	exp, err := jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint(reporterURL)))
+	if err != nil {
+		return nil, fmt.Errorf("creating new exporter: %w", err)
+	}
+
+	tp := tracesdk.NewTracerProvider(
+		tracesdk.WithSampler(tracesdk.TraceIDRatioBased(probability)),
+		// Always be sure to batch in production.
+		tracesdk.WithBatcher(exp,
+			tracesdk.WithMaxExportBatchSize(tracesdk.DefaultMaxExportBatchSize),
+			tracesdk.WithBatchTimeout(tracesdk.DefaultScheduleDelay*time.Millisecond),
+			tracesdk.WithMaxExportBatchSize(tracesdk.DefaultMaxExportBatchSize),
+		),
+		// Record information about this application in a Resource.
+		tracesdk.WithResource(resource.NewWithAttributes(
+			semconv.SchemaURL,
+			semconv.ServiceNameKey.String(service),
+			attribute.String("exporter", "jaeger"),
+		)),
+	)
+
+	otel.SetTracerProvider(tp)
+	return tp, nil
 }

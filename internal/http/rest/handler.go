@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"database/sql"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -8,20 +9,22 @@ import (
 	"github.com/phbpx/gobeer/internal/http/rest/mid"
 	"github.com/phbpx/gobeer/internal/listing"
 	"github.com/phbpx/gobeer/internal/reviewing"
-	"go.uber.org/zap"
+	"github.com/phbpx/gobeer/internal/storage/postgres"
+	"github.com/phbpx/gobeer/pkg/logger"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Config holds the dependencies for the handler.
 type Config struct {
-	Log       *zap.SugaredLogger
-	Adding    *adding.Service
-	Reviewing *reviewing.Service
-	Listing   *listing.Service
+	Log    *logger.Logger
+	Tracer trace.Tracer
+	DB     *sql.DB
 }
 
 // Handler is the HTTP handler for the REST API.
 type Handler struct {
-	log       *zap.SugaredLogger
+	log       *logger.Logger
+	tracer    trace.Tracer
 	adding    *adding.Service
 	reviewing *reviewing.Service
 	listing   *listing.Service
@@ -29,11 +32,17 @@ type Handler struct {
 
 // NewHandler creates a new Handler.
 func NewHandler(cfg Config) *Handler {
+	storage := postgres.NewStorage(cfg.DB)
+	addingSrv := adding.NewService(storage)
+	reviewingSrv := reviewing.NewService(storage)
+	listingSrv := listing.NewService(storage)
+
 	return &Handler{
 		log:       cfg.Log,
-		adding:    cfg.Adding,
-		reviewing: cfg.Reviewing,
-		listing:   cfg.Listing,
+		tracer:    cfg.Tracer,
+		adding:    addingSrv,
+		reviewing: reviewingSrv,
+		listing:   listingSrv,
 	}
 }
 
@@ -44,9 +53,12 @@ func (h *Handler) Router() *gin.Engine {
 	r := gin.New()
 
 	// Add middlewares.
-	r.Use(gin.Recovery())
-	r.Use(mid.Logger(h.log))
-	r.Use(mid.ErrorHandler())
+	r.Use(
+		gin.Recovery(),
+		mid.Tracing(h.tracer),
+		mid.Logger(h.log),
+		mid.ErrorHandler(),
+	)
 
 	// app routes.
 	r.POST("/beers", h.addBeer)
@@ -64,13 +76,15 @@ func (h *Handler) Router() *gin.Engine {
 
 // addBeer is the HTTP handler for the POST /beers endpoint.
 func (h *Handler) addBeer(c *gin.Context) {
+	ctx := c.Request.Context()
+
 	var nb adding.NewBeer
 	if err := c.ShouldBindJSON(&nb); err != nil {
 		c.Error(err)
 		return
 	}
 
-	b, err := h.adding.AddBeer(c, nb)
+	b, err := h.adding.AddBeer(ctx, nb)
 	if err != nil {
 		c.Error(err)
 		return
@@ -81,7 +95,9 @@ func (h *Handler) addBeer(c *gin.Context) {
 
 // listBeers is the HTTP handler for the GET /beers endpoint.
 func (h *Handler) listBeers(c *gin.Context) {
-	bs, err := h.listing.ListBeers(c)
+	ctx := c.Request.Context()
+
+	bs, err := h.listing.ListBeers(ctx)
 	if err != nil {
 		c.Error(err)
 		return
@@ -97,6 +113,8 @@ func (h *Handler) listBeers(c *gin.Context) {
 
 // addReview is the HTTP handler for the POST /beers/:id/reviews endpoint.
 func (h *Handler) addReview(c *gin.Context) {
+	ctx := c.Request.Context()
+
 	var nr reviewing.NewReview
 	if err := c.ShouldBindJSON(&nr); err != nil {
 		c.Error(err)
@@ -106,7 +124,7 @@ func (h *Handler) addReview(c *gin.Context) {
 	beerID := c.Param("id")
 	nr.BeerID = beerID
 
-	bs, err := h.reviewing.CreateReview(c, nr)
+	bs, err := h.reviewing.CreateReview(ctx, nr)
 	if err != nil {
 		c.Error(err)
 		return
@@ -117,9 +135,10 @@ func (h *Handler) addReview(c *gin.Context) {
 
 // listReviews is the HTTP handler for the GET /beers/:id/reviews endpoint.
 func (h *Handler) listReviews(c *gin.Context) {
+	ctx := c.Request.Context()
 	beerID := c.Param("id")
 
-	r, err := h.listing.ListReviews(c, beerID)
+	r, err := h.listing.ListReviews(ctx, beerID)
 	if err != nil {
 		c.Error(err)
 		return

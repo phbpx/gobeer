@@ -28,10 +28,20 @@ services:
     build: .
     environment:
       GOBEER_DB_HOST: "db:5432"
+      GOBEER_TRACING_REPORTER_URI: "http://jaeger:14268/api/traces"
     ports:
       - 3000:3000
     depends_on:
       - db
+    networks:
+      - gobeer-nw
+  
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "6831:6831/udp"
+      - "16686:16686"
+      - "14268:14268"
     networks:
       - gobeer-nw
 

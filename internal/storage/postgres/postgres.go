@@ -10,11 +10,13 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/XSAM/otelsql"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/golang-migrate/migrate/v4/source/httpfs"
 	_ "github.com/lib/pq"
-	"go.uber.org/zap"
+	"github.com/phbpx/gobeer/pkg/logger"
+	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 )
 
 //go:embed migrations
@@ -50,7 +52,10 @@ func Open(cfg Config) (*sql.DB, error) {
 		RawQuery: q.Encode(),
 	}
 
-	db, err := sql.Open("postgres", u.String())
+	db, err := otelsql.Open("postgres", u.String(), otelsql.WithAttributes(
+		semconv.DBSystemPostgreSQL,
+		semconv.DBName(cfg.Name),
+	))
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +67,7 @@ func Open(cfg Config) (*sql.DB, error) {
 
 // StatusCheck returns nil if it can successfully talk to the database. It
 // returns a non-nil error otherwise.
-func StatusCheck(ctx context.Context, db *sql.DB, log *zap.SugaredLogger) error {
+func StatusCheck(ctx context.Context, db *sql.DB, log *logger.Logger) error {
 
 	// First check we can ping the database.
 	var pingError error
@@ -71,7 +76,7 @@ func StatusCheck(ctx context.Context, db *sql.DB, log *zap.SugaredLogger) error 
 		if pingError == nil {
 			break
 		}
-		log.Warnf("postgres: ping attempt %d failed: %v", attempts, pingError)
+		log.Warn(ctx, "postgres: ping attempt %d failed: %v", attempts, pingError)
 		time.Sleep(time.Duration(attempts) * 100 * time.Millisecond)
 		if ctx.Err() != nil {
 			return ctx.Err()
@@ -91,7 +96,7 @@ func StatusCheck(ctx context.Context, db *sql.DB, log *zap.SugaredLogger) error 
 }
 
 // RunMigration runs the database migrations.
-func RunMigrations(ctx context.Context, db *sql.DB, log *zap.SugaredLogger) error {
+func RunMigrations(ctx context.Context, db *sql.DB, log *logger.Logger) error {
 	// Check if the database is ready.
 	if err := StatusCheck(ctx, db, log); err != nil {
 		return fmt.Errorf("db status check: %w", err)
