@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/phbpx/gobeer/internal/adding"
+	"github.com/phbpx/gobeer/internal/email"
 	"github.com/phbpx/gobeer/internal/http/server/mid"
 	"github.com/phbpx/gobeer/internal/listing"
 	"github.com/phbpx/gobeer/internal/reviewing"
@@ -17,9 +18,10 @@ import (
 
 // Config holds the dependencies for the handler.
 type Config struct {
-	Log    *logger.Logger
-	Tracer trace.Tracer
-	DB     *sql.DB
+	Log         *logger.Logger
+	Tracer      trace.Tracer
+	DB          *sql.DB
+	NotifierURL string
 }
 
 // Server is the HTTP Server for the REST API.
@@ -33,9 +35,10 @@ type Server struct {
 
 // New creates a new Server.
 func New(cfg Config) *Server {
-	storage := postgres.NewStorage(cfg.DB)
+	storage := postgres.NewStore(cfg.DB)
+	notifier := email.NewEmailNotifier(cfg.NotifierURL)
 	addingSrv := adding.NewService(storage)
-	reviewingSrv := reviewing.NewService(storage)
+	reviewingSrv := reviewing.NewService(storage, notifier)
 	listingSrv := listing.NewService(storage)
 
 	return &Server{
@@ -123,9 +126,8 @@ func (h *Server) addReview(c *gin.Context) {
 	}
 
 	beerID := c.Param("id")
-	nr.BeerID = beerID
 
-	bs, err := h.reviewing.CreateReview(ctx, nr)
+	bs, err := h.reviewing.CreateReview(ctx, beerID, nr)
 	if err != nil {
 		c.Error(err)
 		return

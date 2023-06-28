@@ -11,20 +11,19 @@ import (
 	"time"
 
 	"github.com/ardanlabs/conf/v3"
-	"github.com/phbpx/gobeer/internal/http/server"
-	"github.com/phbpx/gobeer/internal/storage/postgres"
+	"github.com/phbpx/gobeer/cmd/email-api/handler"
 	"github.com/phbpx/gobeer/pkg/logger"
 	"github.com/phbpx/gobeer/pkg/tracing"
 )
 
-const service = "gobeer-api"
+const service = "email-api"
 
 func main() {
 	ctx := context.Background()
 	log := logger.New(os.Stdout, logger.LevelInfo, service)
 
 	if err := run(ctx, log); err != nil {
-		log.Error(ctx, "startup", "ERROR", err)
+		log.Error(ctx, "ERROR", "error", err)
 		os.Exit(1)
 	}
 }
@@ -40,19 +39,7 @@ func run(ctx context.Context, log *logger.Logger) error {
 			WriteTimeout    time.Duration `conf:"default:10s"`
 			IdleTimeout     time.Duration `conf:"default:120s"`
 			ShutdownTimeout time.Duration `conf:"default:20s"`
-			APIHost         string        `conf:"default:0.0.0.0:3000"`
-		}
-		DB struct {
-			User         string `conf:"default:postgres"`
-			Password     string `conf:"default:postgres,mask"`
-			Host         string `conf:"default:localhost"`
-			Name         string `conf:"default:testdb"`
-			MaxIdleConns int    `conf:"default:0"`
-			MaxOpenConns int    `conf:"default:0"`
-			DisableTLS   bool   `conf:"default:true"`
-		}
-		Notifier struct {
-			EmailURL string `conf:"default:https://localhost:3001"`
+			APIHost         string        `conf:"default:0.0.0.0:3001"`
 		}
 		Tracing struct {
 			ReporterURI string  `conf:"default:http://localhost:14268/api/traces"`
@@ -60,7 +47,7 @@ func run(ctx context.Context, log *logger.Logger) error {
 		}
 	}{}
 
-	const prefix = "GOBEER"
+	const prefix = "EMAIL"
 	help, err := conf.Parse(prefix, &cfg)
 	if err != nil {
 		if errors.Is(err, conf.ErrHelpWanted) {
@@ -68,39 +55,6 @@ func run(ctx context.Context, log *logger.Logger) error {
 			return nil
 		}
 		return fmt.Errorf("parsing config: %w", err)
-
-	}
-
-	// -------------------------------------------------------------------------
-	// Database Support
-
-	// Create connectivity to the database.
-	log.Info(ctx, "startup", "status", "initializing database support", "host", cfg.DB.Host)
-
-	db, err := postgres.Open(postgres.Config{
-		User:         cfg.DB.User,
-		Password:     cfg.DB.Password,
-		Host:         cfg.DB.Host,
-		Name:         cfg.DB.Name,
-		MaxIdleConns: cfg.DB.MaxIdleConns,
-		MaxOpenConns: cfg.DB.MaxOpenConns,
-		DisableTLS:   cfg.DB.DisableTLS,
-	})
-	if err != nil {
-		return fmt.Errorf("connecting to db: %w", err)
-	}
-	defer func() {
-		db.Close()
-	}()
-
-	// -------------------------------------------------------------------------
-	// Update the schema, if needed.
-
-	log.Info(ctx, "startup", "status", "updating database schema", "database", cfg.DB.Name, "host", cfg.DB.Host)
-
-	if err := postgres.RunMigrations(context.Background(), db, log); err != nil {
-		log.Info(ctx, "shutdown", "status", "stopping database support", "host", cfg.DB.Host)
-		return fmt.Errorf("migrating db: %w", err)
 	}
 
 	// -------------------------------------------------------------------------
@@ -121,18 +75,10 @@ func run(ctx context.Context, log *logger.Logger) error {
 
 	log.Info(ctx, "startup", "status", "initializing http server")
 
-	// Create handler.
-	h := server.New(server.Config{
-		Log:         log,
-		Tracer:      tracer,
-		DB:          db,
-		NotifierURL: cfg.Notifier.EmailURL,
-	})
-
 	// Create a new HTTP server.
 	srv := http.Server{
 		Addr:         cfg.Server.APIHost,
-		Handler:      h.Router(),
+		Handler:      handler.New(tracer),
 		ReadTimeout:  cfg.Server.ReadTimeout,
 		WriteTimeout: cfg.Server.WriteTimeout,
 		IdleTimeout:  cfg.Server.IdleTimeout,

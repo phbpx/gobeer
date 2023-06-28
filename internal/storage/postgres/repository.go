@@ -8,20 +8,20 @@ import (
 	"github.com/phbpx/gobeer/internal/reviews"
 )
 
-// Storage provides an implementation if the Repositories interface.
-type Storage struct {
+// Store provides an implementation if the Storer interface.
+type Store struct {
 	db *sql.DB
 }
 
-// NewStorage creates a new Storage instance.
-func NewStorage(db *sql.DB) *Storage {
-	return &Storage{
+// NewStore creates a new Store instance.
+func NewStore(db *sql.DB) *Store {
+	return &Store{
 		db: db,
 	}
 }
 
 // CreateBeer creates a new beer on the database.
-func (s *Storage) CreateBeer(ctx context.Context, b beers.Beer) error {
+func (s *Store) CreateBeer(ctx context.Context, b beers.Beer) error {
 	query := `
         INSERT INTO beers (
                 id, 
@@ -48,7 +48,7 @@ func (s *Storage) CreateBeer(ctx context.Context, b beers.Beer) error {
 }
 
 // BeerExists checks if a beer exists on the database.
-func (s *Storage) BeerExists(ctx context.Context, name, brewery string) (bool, error) {
+func (s *Store) BeerExists(ctx context.Context, name, brewery string) (bool, error) {
 	query := `SELECT EXISTS(SELECT 1 FROM beers WHERE name = $1 AND brewery = $2)`
 
 	var exists bool
@@ -61,7 +61,7 @@ func (s *Storage) BeerExists(ctx context.Context, name, brewery string) (bool, e
 }
 
 // GetBeer returns a beer from the database.
-func (s *Storage) GetBeer(ctx context.Context, id string) (*beers.Beer, error) {
+func (s *Store) GetBeer(ctx context.Context, id string) (*beers.Beer, error) {
 	query := `
         SELECT 
                 b.id,
@@ -103,7 +103,7 @@ func (s *Storage) GetBeer(ctx context.Context, id string) (*beers.Beer, error) {
 }
 
 // ListBeers returns a list of beers from the database.
-func (s *Storage) ListBeers(ctx context.Context) ([]beers.Beer, error) {
+func (s *Store) ListBeers(ctx context.Context) ([]beers.Beer, error) {
 	query := `
         SELECT 
                 b.id,
@@ -151,7 +151,7 @@ func (s *Storage) ListBeers(ctx context.Context) ([]beers.Beer, error) {
 	return list, nil
 }
 
-func (s *Storage) CreateReview(ctx context.Context, r reviews.Review) error {
+func (s *Store) CreateReview(ctx context.Context, r reviews.Review) error {
 	query := `
         INSERT INTO reviews (
                 id,
@@ -177,7 +177,7 @@ func (s *Storage) CreateReview(ctx context.Context, r reviews.Review) error {
 }
 
 // ListReviews returns a list of reviews from the database.
-func (s *Storage) ListReviews(ctx context.Context, id string) ([]reviews.Review, error) {
+func (s *Store) ListReviews(ctx context.Context, id string) ([]reviews.Review, error) {
 	query := `
         SELECT 
                 r.id,

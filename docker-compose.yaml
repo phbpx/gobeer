@@ -25,14 +25,29 @@ services:
       - gobeer-nw
 
   gobber-api:
-    build: .
+    build: 
+      context: .
+      dockerfile: Dockerfile
     environment:
       GOBEER_DB_HOST: "db:5432"
       GOBEER_TRACING_REPORTER_URI: "http://jaeger:14268/api/traces"
+      GOBEER_NOTIFIER_EMAIL_URL: "http://email-api:3001"
     ports:
       - 3000:3000
     depends_on:
       - db
+      - email-api
+    networks:
+      - gobeer-nw
+
+  email-api:
+    build: 
+      context: .
+      dockerfile: Dockerfile.email-api
+    environment:
+      EMAIL_TRACING_REPORTER_URI: "http://jaeger:14268/api/traces"
+    ports:
+      - 3001:3001
     networks:
       - gobeer-nw
   

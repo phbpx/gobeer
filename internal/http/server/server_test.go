@@ -37,13 +37,23 @@ func TestMain(m *testing.M) {
 func TestServer(t *testing.T) {
 	t.Parallel()
 
+	// setup db
 	test := dbtest.NewTest(t, c)
 	defer test.Teardown()
 
+	// setup notifier
+	notifier := httptest.NewServer(http.HandlerFunc(
+		func(w http.ResponseWriter, req *http.Request) {
+			w.WriteHeader(http.StatusOK)
+		},
+	))
+	defer notifier.Close()
+
 	h := server.New(server.Config{
-		Log:    test.Log,
-		Tracer: otel.Tracer(""),
-		DB:     test.DB,
+		Log:         test.Log,
+		Tracer:      otel.Tracer(""),
+		DB:          test.DB,
+		NotifierURL: notifier.URL,
 	})
 
 	testPostBeer201(t, h)
