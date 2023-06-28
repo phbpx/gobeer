@@ -1,4 +1,5 @@
-package rest
+// Package server contains the http server.
+package server
 
 import (
 	"database/sql"
@@ -6,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/phbpx/gobeer/internal/adding"
-	"github.com/phbpx/gobeer/internal/http/rest/mid"
+	"github.com/phbpx/gobeer/internal/http/server/mid"
 	"github.com/phbpx/gobeer/internal/listing"
 	"github.com/phbpx/gobeer/internal/reviewing"
 	"github.com/phbpx/gobeer/internal/storage/postgres"
@@ -21,8 +22,8 @@ type Config struct {
 	DB     *sql.DB
 }
 
-// Handler is the HTTP handler for the REST API.
-type Handler struct {
+// Server is the HTTP Server for the REST API.
+type Server struct {
 	log       *logger.Logger
 	tracer    trace.Tracer
 	adding    *adding.Service
@@ -30,14 +31,14 @@ type Handler struct {
 	listing   *listing.Service
 }
 
-// NewHandler creates a new Handler.
-func NewHandler(cfg Config) *Handler {
+// New creates a new Server.
+func New(cfg Config) *Server {
 	storage := postgres.NewStorage(cfg.DB)
 	addingSrv := adding.NewService(storage)
 	reviewingSrv := reviewing.NewService(storage)
 	listingSrv := listing.NewService(storage)
 
-	return &Handler{
+	return &Server{
 		log:       cfg.Log,
 		tracer:    cfg.Tracer,
 		adding:    addingSrv,
@@ -47,7 +48,7 @@ func NewHandler(cfg Config) *Handler {
 }
 
 // Router returns the gin router.
-func (h *Handler) Router() *gin.Engine {
+func (h *Server) Router() *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 
 	r := gin.New()
@@ -75,7 +76,7 @@ func (h *Handler) Router() *gin.Engine {
 }
 
 // addBeer is the HTTP handler for the POST /beers endpoint.
-func (h *Handler) addBeer(c *gin.Context) {
+func (h *Server) addBeer(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	var nb adding.NewBeer
@@ -94,7 +95,7 @@ func (h *Handler) addBeer(c *gin.Context) {
 }
 
 // listBeers is the HTTP handler for the GET /beers endpoint.
-func (h *Handler) listBeers(c *gin.Context) {
+func (h *Server) listBeers(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	bs, err := h.listing.ListBeers(ctx)
@@ -112,7 +113,7 @@ func (h *Handler) listBeers(c *gin.Context) {
 }
 
 // addReview is the HTTP handler for the POST /beers/:id/reviews endpoint.
-func (h *Handler) addReview(c *gin.Context) {
+func (h *Server) addReview(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	var nr reviewing.NewReview
@@ -134,7 +135,7 @@ func (h *Handler) addReview(c *gin.Context) {
 }
 
 // listReviews is the HTTP handler for the GET /beers/:id/reviews endpoint.
-func (h *Handler) listReviews(c *gin.Context) {
+func (h *Server) listReviews(c *gin.Context) {
 	ctx := c.Request.Context()
 	beerID := c.Param("id")
 

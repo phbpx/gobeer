@@ -14,7 +14,7 @@ import (
 
 const tracerKey = "gin-tracer"
 
-// Logger is a middleware that logs the request as it goes in and the response as it goes out.
+// Tracing is a middleware that enables distributed tracing.
 func Tracing(tracer trace.Tracer) gin.HandlerFunc {
 	textMapPropagator := otel.GetTextMapPropagator()
 

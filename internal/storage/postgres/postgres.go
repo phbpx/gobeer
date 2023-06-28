@@ -95,7 +95,7 @@ func StatusCheck(ctx context.Context, db *sql.DB, log *logger.Logger) error {
 	return db.QueryRowContext(ctx, q).Scan(&tmp)
 }
 
-// RunMigration runs the database migrations.
+// RunMigrations runs the database migrations.
 func RunMigrations(ctx context.Context, db *sql.DB, log *logger.Logger) error {
 	// Check if the database is ready.
 	if err := StatusCheck(ctx, db, log); err != nil {

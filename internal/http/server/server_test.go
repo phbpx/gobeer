@@ -1,4 +1,4 @@
-package rest_test
+package server_test
 
 import (
 	"bytes"
@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/phbpx/gobeer/internal/adding"
 	"github.com/phbpx/gobeer/internal/beers"
-	"github.com/phbpx/gobeer/internal/http/rest"
+	"github.com/phbpx/gobeer/internal/http/server"
 	"github.com/phbpx/gobeer/internal/reviewing"
 	"github.com/phbpx/gobeer/internal/storage/postgres/dbtest"
 	"github.com/phbpx/gobeer/pkg/docker"
@@ -34,13 +34,13 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
-func TestHandler(t *testing.T) {
+func TestServer(t *testing.T) {
 	t.Parallel()
 
 	test := dbtest.NewTest(t, c)
 	defer test.Teardown()
 
-	h := rest.NewHandler(rest.Config{
+	h := server.New(server.Config{
 		Log:    test.Log,
 		Tracer: otel.Tracer(""),
 		DB:     test.DB,
@@ -58,7 +58,7 @@ func TestHandler(t *testing.T) {
 	testGetBeerReviews400(t, h)
 }
 
-func testPostBeer201(t *testing.T, h *rest.Handler) {
+func testPostBeer201(t *testing.T, h *server.Server) {
 	nb := adding.NewBeer{
 		Name:      "Test Beer",
 		Brewery:   "Test Brewery",
@@ -89,7 +89,7 @@ func testPostBeer201(t *testing.T, h *rest.Handler) {
 	}
 }
 
-func testPostBeer400(t *testing.T, h *rest.Handler) {
+func testPostBeer400(t *testing.T, h *server.Server) {
 	r := httptest.NewRequest("POST", "/beers", strings.NewReader("{}"))
 	w := httptest.NewRecorder()
 
@@ -107,7 +107,7 @@ func testPostBeer400(t *testing.T, h *rest.Handler) {
 	}
 }
 
-func testPostBeer409(t *testing.T, h *rest.Handler) {
+func testPostBeer409(t *testing.T, h *server.Server) {
 	nb := adding.NewBeer{
 		Name:      "Test Beer",
 		Brewery:   "Test Brewery",
@@ -138,7 +138,7 @@ func testPostBeer409(t *testing.T, h *rest.Handler) {
 	}
 }
 
-func testGetBeers200(t *testing.T, h *rest.Handler) {
+func testGetBeers200(t *testing.T, h *server.Server) {
 	r := httptest.NewRequest("GET", "/beers", nil)
 	w := httptest.NewRecorder()
 
@@ -156,7 +156,7 @@ func testGetBeers200(t *testing.T, h *rest.Handler) {
 	}
 }
 
-func testPostBeerReview201(t *testing.T, h *rest.Handler) {
+func testPostBeerReview201(t *testing.T, h *server.Server) {
 	nr := reviewing.NewReview{
 		UserID:  uuid.NewString(),
 		Score:   5,
@@ -192,7 +192,7 @@ func testPostBeerReview201(t *testing.T, h *rest.Handler) {
 	}
 }
 
-func testPostBeerReview400(t *testing.T, h *rest.Handler) {
+func testPostBeerReview400(t *testing.T, h *server.Server) {
 	r := httptest.NewRequest("POST", "/beers/123/reviews", strings.NewReader("{}"))
 	w := httptest.NewRecorder()
 
@@ -210,7 +210,7 @@ func testPostBeerReview400(t *testing.T, h *rest.Handler) {
 	}
 }
 
-func testPostBeerReview404(t *testing.T, h *rest.Handler) {
+func testPostBeerReview404(t *testing.T, h *server.Server) {
 	nr := reviewing.NewReview{
 		UserID:  uuid.NewString(),
 		Score:   3.0,
@@ -241,7 +241,7 @@ func testPostBeerReview404(t *testing.T, h *rest.Handler) {
 	}
 }
 
-func testGetBeerReviews200(t *testing.T, h *rest.Handler) {
+func testGetBeerReviews200(t *testing.T, h *server.Server) {
 	beers := getBeers(t, h)
 	if len(beers) == 0 {
 		t.Fatal("No beers found")
@@ -266,7 +266,7 @@ func testGetBeerReviews200(t *testing.T, h *rest.Handler) {
 	}
 }
 
-func testGetBeerReviews204(t *testing.T, h *rest.Handler) {
+func testGetBeerReviews204(t *testing.T, h *server.Server) {
 	beerID := uuid.NewString()
 
 	r := httptest.NewRequest("GET", fmt.Sprintf("/beers/%s/reviews", beerID), nil)
@@ -286,7 +286,7 @@ func testGetBeerReviews204(t *testing.T, h *rest.Handler) {
 	}
 }
 
-func testGetBeerReviews400(t *testing.T, h *rest.Handler) {
+func testGetBeerReviews400(t *testing.T, h *server.Server) {
 	r := httptest.NewRequest("GET", "/beers/invalid/reviews", nil)
 	w := httptest.NewRecorder()
 
@@ -304,7 +304,7 @@ func testGetBeerReviews400(t *testing.T, h *rest.Handler) {
 	}
 }
 
-func getBeers(t *testing.T, h *rest.Handler) []beers.Beer {
+func getBeers(t *testing.T, h *server.Server) []beers.Beer {
 	r := httptest.NewRequest("GET", "/beers", nil)
 	w := httptest.NewRecorder()
 

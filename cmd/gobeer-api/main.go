@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/ardanlabs/conf/v3"
-	"github.com/phbpx/gobeer/internal/http/rest"
+	"github.com/phbpx/gobeer/internal/http/server"
 	"github.com/phbpx/gobeer/internal/storage/postgres"
 	"github.com/phbpx/gobeer/pkg/logger"
 	"go.opentelemetry.io/otel"
@@ -124,7 +124,7 @@ func run(ctx context.Context, log *logger.Logger) error {
 	log.Info(ctx, "startup", "status", "initializing http server")
 
 	// Create handler.
-	h := rest.NewHandler(rest.Config{
+	h := server.New(server.Config{
 		Log:    log,
 		Tracer: tracer,
 		DB:     db,
