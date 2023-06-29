@@ -18,6 +18,7 @@ Projeto de demonstração utilizado na talk sobre estrutura de projetos Go, onde
     - [Executando o ambiente local](#executando-o-ambiente-local)
     - [Postman](#postman)
     - [Banco de dados](#banco-de-dados)
+    - [Monitoria](#monitoria)
 
 ## Motivação
 
@@ -170,7 +171,7 @@ Caso queira acessar o banco com um client de sua preferência:
 - Password: `postgres`
 - Database: `testdb`
 
-#### Jaeger
+#### Monitoria
 
 A infra local utiliza o [OpenTelemetry](https://opentelemetry.io) em conjunto com o [Jaeger](https://github.com/jaegertracing/jaeger) para monitoria.
 - [`http://localhost:16686`](http://localhost:16686)
