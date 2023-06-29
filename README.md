@@ -169,3 +169,9 @@ Caso queira acessar o banco com um client de sua preferência:
 - Username: `postgres`
 - Password: `postgres`
 - Database: `testdb`
+
+#### Jaeger
+
+A infra local utiliza o [OpenTelemetry](https://opentelemetry.io) em conjunto com o [Jaeger](https://github.com/jaegertracing/jaeger) para monitoria.
+- [`http://localhost:16686`](http://localhost:16686)
+
