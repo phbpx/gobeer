@@ -55,8 +55,8 @@ func (s *EmailNotifier) Notify(ctx context.Context, userID string) error {
 	// Inject trace context
 	carrier := propagation.HeaderCarrier{}
 	propagator.Inject(ctx, carrier)
+
 	req.Header = http.Header(carrier)
-	fmt.Println(carrier)
 
 	resp, err := s.client.Do(req)
 	if err != nil {
